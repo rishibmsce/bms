@@ -1,3 +1,4 @@
+
 1. Edit mapred-site.xml
 
 Open the file:
@@ -22,4 +23,112 @@ Now add the following properties inside <configuration>...</configuration>:
   <name>mapreduce.reduce.env</name>
   <value>HADOOP_MAPRED_HOME=/usr/local/hadoop</value>
 </property>
-Replace /usr/local/hadoop with your actual Hadoop installation directory (you can confirm it with echo $HADOOP_HOME).
+Replace /usr/local/hadoop with your actual Hadoop installation directory (you can confirm it with echo $HADOOP_HOME)
+
+
+
+terminal:
+
+start-all.sh
+hadoop fs -mkdir /bhu
+hadoop fs -copyFromLocal /home/hadoop/Desktop/emp.txt /bhu/emp.txt
+hadoop jar /home/hadoop/Desktop/em.jar employee.EmployeeFilterDriver /bhu/emp.txt /um
+hadoop fs -cat /um/part-r-00000
+
+
+mapper:
+package employee;
+
+import java.io.IOException;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+
+public class EmployeeFilterMapper extends Mapper<LongWritable, Text, Text, Text> {
+
+    @Override
+    public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+        String line = value.toString().trim();
+        
+        if (line.isEmpty()) {
+            // Skip empty lines
+            return;
+        }
+
+        String[] parts = line.split(",");
+        
+        if (parts.length < 2) {
+            // Skip malformed lines without enough parts
+            return;
+        }
+
+        String name = parts[0].trim();
+        String salaryStr = parts[1].trim();
+
+        try {
+            int salary = Integer.parseInt(salaryStr);
+            if (salary < 50000) {
+                context.write(new Text(name), new Text(String.valueOf(salary)));
+            }
+        } catch (NumberFormatException e) {
+            // Skip lines where salary is not a valid number
+        }
+    }
+}
+
+
+reducer:
+package employee;
+
+import java.io.IOException;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class EmployeeFilterReducer extends Reducer<Text, Text, Text, Text> {
+  public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+    for (Text val : values) {
+      context.write(key, val);
+    }
+  }
+}
+
+
+
+driver:
+package employee;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class EmployeeFilterDriver {
+
+    public static void main(String[] args) throws Exception {
+        if (args.length != 2) {
+            System.err.println("Usage: EmployeeFilterDriver <input path> <output path>");
+            System.exit(-1);
+        }
+
+        Configuration conf = new Configuration();
+        Job job = Job.getInstance(conf, "Employee Filter");
+
+        job.setJarByClass(EmployeeFilterDriver.class);
+        job.setMapperClass(EmployeeFilterMapper.class);
+        job.setReducerClass(EmployeeFilterReducer.class);
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
+
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}
+
+
+
+.
