@@ -22,6 +22,30 @@ scalac ExampleForLoop1.scala             <----- for compiling
 scala ExampleForLoop1                           <----- for running.
 
 --------------------------------------------------------------------------------------
+Running a Normal Scala Program 
+
+for checking version --> scala -version
+
+nano ExampleForLoop1.scala
+
+copy paste the code [ the object name and the command name should be same]
+
+write a code related to your question below one is for reference.
+  
+object ExampleForLoop1 {
+  def main(args: Array[String]) {
+    var counter: Int = 0;
+    for (counter <- 1 to 100)
+      print(counter + " ");
+  }
+}
+
+and then ---->  ctrl +s , ctrl+x. or crtl+o, enter, ctrl+x 
+
+scalac ExampleForLoop1.scala             <----- for compiling
+scala ExampleForLoop1                           <----- for running.
+
+--------------------------------------------------------------------------------------
 For rdd and flatmap
 
 Exit Spark Shell if it’s open:
@@ -53,6 +77,38 @@ val filtered = reducedata.filter { case (word, count) => count > 4 }
 filtered.collect.foreach(println)
 
 
---------------------------------------------------------------------------------------
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//word count with sort (with space for letters)
+
+val d= sc.textFile("a.txt")
+val wc = d.flatMap(_.split(" ")).map((_,1)).reduceByKey(_+_).filter(_._2>4).sortBy(_._2,false)
+wc.collect.foreach(println)
+
+
+//word count without sort
+
+val d= sc.textFile("a.txt")
+val wc = d.flatMap(_.split(" ")).map((_,1)).reduceByKey(_+_)
+wc.collect.foreach(println)
 
