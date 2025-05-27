@@ -1,0 +1,47 @@
+input :
+2025-05-20   POO1
+2025-05-20   P002
+2025-05-21   P003
+2025-05-20   P004
+
+write a hadoop map reduce program to count how many patients were admitted each day
+PLS HELP
+
+
+mapper.py
+#!/usr/bin/env python3
+import sys
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    parts = line.split()
+    if len(parts) >= 1:
+        date = parts[0]
+        print(f"{date}\t1")
+
+reducer.py
+#!/usr/bin/env python3
+import sys
+
+current_date = None
+current_count = 0
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    date, count = line.split('\t')
+    count = int(count)
+    if current_date == date:
+        current_count += count
+    else:
+        if current_date:
+            print(f"{current_date}\t{current_count}")
+        current_date = date
+        current_count = count
+
+# print last date count
+if current_date:
+    print(f"{current_date}\t{current_count}")

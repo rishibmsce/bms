@@ -1,0 +1,352 @@
+Page [1]:
+>>> lines = sc.textFile(“README.md”)
+
+Page [2]:
+>>> pythonLines = lines.filter(lambda line: “Python” in line)
+>>> pythonLines.first()
+
+Page [3]:
+>>> pythonLines.persist
+>>> pythonLines.count()
+>>> pythonLines.first()
+
+Page [4]:
+# Python parallelize()
+lines = sc.parallelize([“pandas”, “i like pandas”])
+# Scala parallelize()
+val lines = sc.parallelize(List(“pandas”, “i like pandas”))
+# Java parallelize()
+JavaRDD<String> lines = sc.parallelize(Arrays.asList(“pandas”, “i like pandas”));
+
+Page [5]:
+# Python textFile()
+lines = sc.textFile(“/path/to/README.md”)
+# Scala textFile()
+val lines = c.textFile(“/path/to/README.md”)
+# Java textFile()
+JavaRDD<String> lines = sc.textFile(“/path/to/README.md”);
+
+Page [6]:
+# Python filter()
+inputRDD = sc.textFile(“log.txt”)
+errorsRDD = inputRDD.filter(lambda x: “error” in x)
+# Scala filter()
+val inputRDD = sc.textFile(“log.txt”)
+val errorsRDD = inputRDD.filter(line => line.contains(“error”))
+
+Page [7]:
+# Java filter()
+JavaRDD<String> inputRDD = sc.textFile(“log.txt”);
+JavaRDD<String> errorsRDD = inputRDD.filter( new Function<String, Boolean>() { public Boolean call(String x) { return x.contains(“error”); } });
+
+Page [8]:
+# Python filter() and union()
+errorsRDD = inputRDD.filter(lambda x: “error” in x)
+warningsRDD = inputRDD.filter(lambda x: “warning” in x)
+badLinesRDD = errorsRDD.union(warningsRDD)
+
+Page [9]:
+# Python count() and take()
+print “Input had “ + badLinesRDD.count() + ” concerning lines”
+for line in badLinesRDD.take(10): print line
+# Scala count() and take()
+println(“Input had “ + badLinesRDD.count() + ” concerning lines”)
+badLinesRDD.take(10).foreach(println)
+
+Page [10]:
+# Java count() and take()
+System.out.println(“Input had “ + badLinesRDD.count() + ” concerning lines”)
+for (String line: badLinesRDD.take(10)) { System.out.println(line); }
+
+Page [11]:
+# Python function passing to filter()
+word = rdd.filter(lambda s: “error” in s)
+def containsError(s): return “error” in s
+word = rdd.filter(containsError)
+# Scala function passing to map()
+class SearchFunctions(val query: String) {
+  def isMatch(s: String): Boolean = { s.contains(query) }
+  def getMatchesFunctionReference(rdd: RDD[String]): RDD[String] = {
+    rdd.map(isMatch)
+  }
+}
+
+Page [12]:
+# Python map() and collect()
+nums = sc.parallelize([13-16])
+squared = nums.map(lambda x: x * x).collect()
+for num in squared: print “%i “ % (num)
+
+Page [17]:
+# Scala map() and collect()
+val input = sc.parallelize(List(1, 2, 3, 4))
+val result = input.map(x => x * x)
+println(result.collect().mkString(“,”))
+# Java map()
+JavaRDD<Integer> rdd = sc.parallelize(Arrays.asList(1, 2, 3, 4));
+JavaRDD<Integer> result = rdd.map(new Function<Integer, Integer>() { public Integer call(Integer x) { return x*x; } });
+
+Page [18]:
+# Python flatMap() and first()
+lines = sc.parallelize([“hello world”, “hi”])
+words = lines.flatMap(lambda line: line.split(” “))
+words.first()
+
+Page [19]:
+# Scala flatMap() and first()
+val lines = sc.parallelize(List(“hello world”, “hi”))
+val words = lines.flatMap(line => line.split(” “))
+words.first()
+# Java flatMap() and first()
+JavaRDD<String> lines = sc.parallelize(Arrays.asList(“hello world”, “hi”));
+JavaRDD<String> words = lines.flatMap(new FlatMapFunction<String, String>() { public Iterable<String> call(String line) { return Arrays.asList(line.split(” “)); } });
+words.first();
+
+Page [20]:
+# Transformation Examples (Pseudo-code/Syntax)
+map() example: rdd.map(x => x + 1)
+flatMap() example: rdd.flatMap(x => x.to(3))
+filter() example: rdd.filter(x => x != 1)
+distinct() example: distinct()
+
+Page [21]:
+# Two-RDD Transformation Examples (Pseudo-code/Syntax)
+union() example: rdd.union(other)
+intersection() example: rdd.intersection(other)
+subtract() example: rdd.subtract(other)
+cartesian() example: rdd.cartesian(other)
+
+Page [22]:
+# Incorrect accumulator usage (variable becomes local to executor)
+val blankLines = sc.accumulator(0)
+
+Page [23]:
+# Correct accumulator usage
+val blankLines = sc.accumulator(0, "Blank Lines")
+# Inside executor code:
+blankLines += 1
+
+Page [24]:
+# Python reduce()
+sum = rdd.reduce(lambda x, y: x + y)
+# Scala reduce()
+val sum = rdd.reduce((x, y) => x + y)
+# Java reduce()
+Integer sum = rdd.reduce(new Function2<Integer, Integer, Integer>() { public Integer call(Integer x, Integer y) { return x + y; } });
+# reduceByKey() syntax example
+val rdd2=rdd.reduceByKey(_ + _)
+rdd2.foreach(println)
+
+Page [25]:
+# fold() syntax definition
+def fold[T](acc:T)((acc,value) => acc)
+
+Page [26]:
+# Scala makeRDD() and fold()
+val employeeData = List(("Jack",1000.0),("Bob",2000.0),("Carl",7000.0))
+val employeeRDD = sparkContext.makeRDD(employeeData)
+val dummyEmployee = ("dummy",0.0);
+val maxSalaryEmployee = employeeRDD.fold(dummyEmployee)((acc,employee) => { if(acc._2 < employee._2) employee else acc})
+
+Page [27]:
+# Scala aggregate()
+val listRdd = spark.sparkContext.parallelize(List(1,2,3,4,5,3,2))
+def param0= (accu:Int, v:Int) => accu + v
+def param1= (accu1:Int,accu2:Int) => accu1 + accu2
+val result = listRdd.aggregate(0)(param0,param1)
+println("output 1 =>" + result)
+
+Page [28]:
+# Scala aggregate() on Key-Value RDD
+val result = inputrdd.aggregate(0) (
+(acc, value) => (acc + value._2),
+/* * This is a combOp for mergining two U’s * (ie 2 Int) */ (acc1, acc2) => (acc1 + acc2)
+)
+
+Page [29]:
+# Python aggregate() for Average
+sumCount = nums.aggregate((0, 0), (lambda acc, value: (acc + value, acc[13] + 1), (lambda acc1, acc2: (acc1 + acc2, acc1[13] + acc2[13]))))
+return sumCount / float(sumCount[13])
+# Scala aggregate() for Average
+val result = input.aggregate((0, 0))(
+(acc, value) => (acc._1 + value, acc._2 + 1),
+(acc1, acc2) => (acc1._1 + acc2._1, acc1._2 + acc2._2))
+val avg = result._1 / result._2.toDouble
+
+Page [30]:
+# Java aggregate() setup for Average
+class AvgCount implements Serializable { /* ... class definition ... */ }
+Function2<AvgCount, Integer, AvgCount> addAndCount = new Function2<AvgCount, Integer, AvgCount>() { public AvgCount call(AvgCount a, Integer x) { a.total += x; a.num += 1; return a; } };
+Function2<AvgCount, AvgCount, AvgCount> combine = new Function2<AvgCount, AvgCount, AvgCount>() { public AvgCount call(AvgCount a, AvgCount b) { a.total += b.total; a.num += b.num; } };
+
+Page [31]:
+# Java aggregate() execution for Average
+AvgCount result = rdd.aggregate(initial, addAndCount, combine);
+System.out.println(result.avg());
+# Action Examples
+take(n)
+top()
+
+Page [32]:
+# Scala example without persistence (map, count, collect)
+val result = input.map(x => x*x)
+println(result.count())
+println(result.collect().mkString(“,”))
+# Persistence command
+RDD.persist()
+
+Page [33]:
+# Scala Word Count Example (Shell)
+val data=sc.textFile("sparkdata.txt")
+data.collect;
+val splitdata = data.flatMap(line => line.split(" "));
+splitdata.collect;
+val mapdata = splitdata.map(word => (word,1));
+mapdata.collect;
+val reducedata = mapdata.reduceByKey(_+_);
+
+Page [34]:
+# Scala Word Count Example (File)
+val textFile = sc.textFile("/home/bhoom/Desktop/wc.txt")
+val counts = textFile.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey(_ + _)
+import scala.collection.immutable.ListMap
+val sorted=ListMap(counts.collect.sortWith(_._2 > _._2):_*)
+println(sorted)
+for((k,v)<-sorted) {
+  if(v>4)
+  {
+    print(k+",")
+    print(v)
+    println()
+  }
+}
+
+Page [35]:
+# Scala SparkSession and SparkContext creation
+val spark:SparkSession = SparkSession.builder()
+      .master("local[15]")
+      .appName("SparkByExamples.com")
+      .getOrCreate()
+val sc = spark.sparkContext
+# Scala textFile()
+val rdd:RDD[String] = sc.textFile("src/main/scala/test.txt")
+# Scala flatMap()
+val rdd2 = rdd.flatMap(f=>f.split(" "))
+# Scala map()
+val rdd3:RDD[(String,Int)]= rdd2.map(m=>(m,1))
+# Scala filter()
+val rdd4 = rdd3.filter(a=> a._1.startsWith("a"))
+# Scala reduceByKey()
+val rdd5 = rdd3.reduceByKey(_ + _)
+# Transformation mention
+SortByKey()
+
+Page [36]:
+# Scala map(), sortByKey(), foreach(), println()
+val rdd6 = rdd5.map(a=>(a._2,a._1)).sortByKey()
+rdd6.foreach(println)
+# reduce() signature
+def reduce(f: (T, T) => T): T
+
+Page [37]:
+# Scala parallelize() and reduce() (binary syntax)
+val listRdd = spark.sparkContext.parallelize(List(1,2,3,4,5,3,2))
+println("output min using binary : "+listRdd.reduce(_ min _))
+println("output max using binary : "+listRdd.reduce(_ max _))
+println("output sum using binary : "+listRdd.reduce(_ + _))
+# Scala parallelize() and reduce() (lambda syntax)
+val listRdd = spark.sparkContext.parallelize(List(1,2,3,4,5,3,2))
+println("output min : "+listRdd.reduce( (a,b) => a min b))
+println("output max : "+listRdd.reduce( (a,b) => a max b))
+println("output sum : "+listRdd.reduce( (a,b) => a + b))
+
+Page [38]:
+# Scala parallelize() and reduce() on Tuple RDD
+val inputRDD = spark.sparkContext.parallelize(List(("Z", 1),("A", 20),("B", 30),("C", 40),("B", 30),("B", 60)))
+println("output min : "+inputRDD.reduce( (a,b)=> ("max",a._2 min b._2))._2)
+println("output max : "+inputRDD.reduce( (a,b)=> ("max",a._2 max b._2))._2)
+println("output sum : "+inputRDD.reduce( (a,b)=> ("Sum",a._2 + b._2))._2)
+
+Page [39]:
+# Scala SparkSession and SparkContext creation (within object structure)
+package com.sparkbyexamples.spark.rdd.functions
+import org.apache.spark.sql.SparkSession
+object reduceExample extends App {
+  val spark = SparkSession.builder()
+    .appName("SparkByExamples.com")
+    .master("local[15]")
+    .getOrCreate()
+  spark.sparkContext.setLogLevel("ERROR")
+# Scala parallelize() and reduce() (binary syntax, duplicate from [37])
+val listRdd = spark.sparkContext.parallelize(List(1,2,3,4,5,3,2))
+println("output sum using binary : "+listRdd.reduce(_ min _))
+println("output min using binary : "+listRdd.reduce(_ max _))
+println("output max using binary : "+listRdd.reduce(_ + _))
+
+Page [40]:
+# Scala parallelize() and reduce() (lambda syntax, duplicate from [37])
+println("output min : "+listRdd.reduce( (a,b) => a min b))
+println("output max : "+listRdd.reduce( (a,b) => a max b))
+println("output sum : "+listRdd.reduce( (a,b) => a + b))
+# Scala parallelize() and reduce() on Tuple RDD (duplicate from [38])
+val inputRDD = spark.sparkContext.parallelize(List(("Z", 1),("A", 20),("B", 30), ("C", 40),("B", 30),("B", 60)))
+println("output max : "+inputRDD.reduce( (a,b)=> ("max",a._2 min b._2))._2)
+println("output max : "+inputRDD.reduce( (a,b)=> ("max",a._2 max b._2))._2)
+}
+
+wordcount
+import org.apache.spark.{SparkConf, SparkContext}
+
+// Create Spark Context
+val conf = new SparkConf().setAppName("SimpleWordCount").setMaster("local")
+val sc = new SparkContext(conf)
+
+// Read file
+val rdd = sc.textFile("file.txt") // Replace with your filename
+
+// Count words
+val counts = rdd
+.flatMap(line => line.split("\\s+")) // Split lines into words
+.map(word => (word, 1)) // Map each word to (word, 1)
+.reduceByKey(_ + _) // Sum counts for each word
+.filter { case (_, count) => count > 4 } // Filter words with count > 4
+
+// Show result
+counts.collect().foreach { case (word, count) =>
+println(s"$word $count")
+}
+
+// Stop Spark Context
+sc.stop()
+
+
+samraat codes
+spark program -3:
+import org.apache.spark.streaming._
+val ssc = new StreamingContext(sc, Seconds(5))
+val lines = ssc.socketTextStream("localhost", 9999)
+val stopwords = Set("the", "is", "in", "a", "an", "and", "to", "both")
+def lemmatize(word: String): String = if (word.endsWith("ing")) word.dropRight(3) else if (word.endsWith("ed")) word.dropRight(2) else word
+val cleaned = lines.map(_.toLowerCase.replaceAll("[^a-z\\s]", "").replaceAll("\\s+", " ").split(" ").filter(w => !stopwords.contains(w) && w.nonEmpty).map(lemmatize).mkString(" "))
+cleaned.print()
+ssc.start()
+ssc.awaitTermination()
+
+
+spark program -2 (rdd + flatmap)
+val textFile = sc.textFile("/home/bmscecs/Input.txt")
+val words = textFile.flatMap(_.split(" "))
+val wordCounts = words.map((_, 1)).reduceByKey(_ + _)
+val filtered = wordCounts.filter{ case (_, count) => count > 4 }
+filtered.collect().foreach(println)
+
+
+character count in word
+r10=sc.textFile("/Users/manjarijoshi/Downloads/t1.txt")
+r10: org.apache.spark.rdd.RDD[String] = /Users/manjarijoshi/Downloads/t1.txt MapPartitionsRDD[8] at textFile at <console>:23
+
+scala> val r11=r10.map(x=>x.length)
+r11: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[9] at map at <console>:24
+
+scala> val r12=r11.reduce((x,y)=>x+y)
+r12: Int = 38

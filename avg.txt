@@ -1,0 +1,76 @@
+mapper.py
+import sys
+
+# Calculates mean temperature, humidity, light, and CO2
+# Input data format:
+# "2014-04-29 10:15:32",37,44,31,6
+# Output:
+# "2014-04-29 10:15 [48.75, 31.25, 29.0, 16.5]"
+# Input comes from STDIN (standard input)
+
+for line in sys.stdin:
+    # Remove leading and trailing whitespace
+    line = line.strip()
+    
+    # Split the line by comma
+    data = line.split(',')
+
+    # For aggregation by minute
+    key = data[0][0:16]  # "2014-04-29 10:15"
+    
+    # Join the sensor values as a single string
+    value = ','.join(data[1:5])
+
+    # Print the key and value separated by a tab (for MapReduce or similar)
+    print('%s\t%s' % (key, value))
+
+reducer.py
+#!/usr/bin/env python
+
+from operator import itemgetter
+import sys
+import numpy as np
+
+current_key = None
+current_vals_list = []
+
+# Input comes from STDIN (mapper output)
+for line in sys.stdin:
+    # Remove leading and trailing whitespace
+    line = line.strip()
+    
+    # Parse the input from mapper
+    key, values = line.split('\t', 1)
+    list_of_values = values.split(',')
+    
+    # Convert list of strings to list of ints
+    list_of_values = [int(i) for i in list_of_values]
+    
+    if current_key == key:
+        current_vals_list.append(list_of_values)
+    else:
+        if current_key is not None:
+            # Compute and print the mean of values
+            b = np.array(current_vals_list)
+            meanval = [
+                np.mean(b[:, 0]),
+                np.mean(b[:, 1]),
+                np.mean(b[:, 2]),
+                np.mean(b[:, 3])
+            ]
+            print('%s\t%s' % (current_key, str(meanval)))
+        
+        # Reset for new key
+        current_key = key
+        current_vals_list = [list_of_values]
+
+# Output the last key's result after the loop ends
+if current_key is not None:
+    b = np.array(current_vals_list)
+    meanval = [
+        np.mean(b[:, 0]),
+        np.mean(b[:, 1]),
+        np.mean(b[:, 2]),
+        np.mean(b[:, 3])
+    ]
+    print('%s\t%s' % (current_key, str(meanval)))

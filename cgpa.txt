@@ -1,0 +1,50 @@
+mapper
+import sys
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    parts = line.split()
+    if len(parts) != 2:
+        continue
+    section, cgpa = parts
+    try:
+        cgpa = float(cgpa)
+        print(f"{section}\t{cgpa}")
+    except ValueError:
+        continue
+
+
+reducer
+import sys
+
+current_section = None
+total_cgpa = 0.0
+count = 0
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    section, cgpa = line.split('\t')
+    try:
+        cgpa = float(cgpa)
+    except ValueError:
+        continue
+
+    if section == current_section:
+        total_cgpa += cgpa
+        count += 1
+    else:
+        if current_section:
+            avg = total_cgpa / count
+            print(f"{current_section}\t{avg:.2f}")
+        current_section = section
+        total_cgpa = cgpa
+        count = 1
+
+# Emit last section
+if current_section:
+    avg = total_cgpa / count
+    print(f"{current_section}\t{avg:.2f}")

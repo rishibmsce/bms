@@ -1,0 +1,121 @@
+
+-- Create KeySpace
+CREATE KEYSPACE Students WITH REPLICATION = {'class':'SimpleStrategy','replication_factor':1};
+
+-- Describe the existing Keyspaces
+DESCRIBE KEYSPACES;
+
+-- For More details on existing keyspaces
+SELECT * FROM system.schema_keyspaces;
+
+-- Use the keyspace “Students”
+USE Students;
+
+-- Create table (column family) by name Student_Info
+CREATE TABLE Students_Info (
+    Roll_No int PRIMARY KEY,
+    StudName text,
+    DateOfJoining timestamp,
+    last_exam_Percent double
+);
+
+-- Lookup the names of all tables in the current keyspaces
+DESCRIBE TABLES;
+
+-- Describe the table information
+DESCRIBE TABLE Students_Info;
+
+-- CRUD Operations
+-- Insert data
+BEGIN BATCH
+INSERT INTO Students_Info(Roll_No, StudName, DateOfJoining, last_exam_Percent) VALUES (1,'Asha','2012-03-12',79.9);
+INSERT INTO Students_Info(Roll_No, StudName, DateOfJoining, last_exam_Percent) VALUES (2,'Krian','2012-03-12',89.9);
+INSERT INTO Students_Info(Roll_No, StudName, DateOfJoining, last_exam_Percent) VALUES (3,'Tarun','2012-03-12',78.9);
+INSERT INTO Students_Info(Roll_No, StudName, DateOfJoining, last_exam_Percent) VALUES (4,'Samrth','2012-03-12',90.9);
+INSERT INTO Students_Info(Roll_No, StudName, DateOfJoining, last_exam_Percent) VALUES (5,'Smitha','2012-03-12',67.9);
+INSERT INTO Students_Info(Roll_No, StudName, DateOfJoining, last_exam_Percent) VALUES (6,'Rohan','2012-03-12',56.9);
+APPLY BATCH;
+
+-- View data from the table
+SELECT * FROM Students_Info;
+
+-- View data with specific Roll_No values
+SELECT * FROM Students_Info WHERE Roll_No IN (1,2,3);
+
+-- Invalid query without index
+-- select * from Students_Info where StudName = 'Asha';
+
+-- Create an index on StudName column
+CREATE INDEX ON Students_Info (StudName);
+
+-- Execute query on indexed column
+SELECT * FROM Students_Info WHERE StudName = 'Asha';
+
+-- Limit number of rows returned
+SELECT Roll_No, StudName FROM Students_Info LIMIT 2;
+
+-- Alias for Column
+SELECT Roll_No AS "USN" FROM Students_Info;
+
+-- UPDATE Operations
+UPDATE Students_Info SET StudName='David Sheen' WHERE Roll_No=2;
+
+-- Attempt to update primary key (not allowed)
+-- UPDATE Students_Info SET Roll_No=6 WHERE Roll_No=3;
+
+-- DELETE Operations
+DELETE last_exam_Percent FROM Students_Info WHERE Roll_No=2;
+DELETE FROM Students_Info WHERE Roll_No=2;
+
+-- Set Collection
+ALTER TABLE Students_Info ADD hobbies set<text>;
+
+-- List Collection
+ALTER TABLE Students_Info ADD language list<text>;
+
+UPDATE Students_Info SET hobbies = hobbies + {'Chess','Table Tennis'} WHERE Roll_No=1;
+
+SELECT * FROM Students_Info WHERE Roll_No=1;
+
+UPDATE Students_Info SET language = language + ['Hindi','English'] WHERE Roll_No=1;
+
+-- Counter Example
+CREATE TABLE library_book(
+    counter_value counter,
+    book_name varchar,
+    stud_name varchar,
+    PRIMARY KEY(book_name, stud_name)
+);
+
+-- Update counter column
+UPDATE library_book SET counter_value = counter_value + 1 WHERE book_name='Big data Analytics' AND stud_name='jeet';
+
+-- Time to Live (TTL)
+CREATE TABLE userlogin(userid int PRIMARY KEY, password text);
+INSERT INTO userlogin(userid, password) VALUES (1, 'infy') USING TTL 30;
+SELECT TTL(password) FROM userlogin WHERE userid=1;
+
+-- IMPORT and EXPORT
+-- Export to CSV
+COPY elearninglists(id, course_order, course_id, courseowner, title) TO 'd:\elearninglists.csv';
+
+-- Import from CSV
+COPY elearninglists(id, course_order, course_id, courseowner, title) FROM 'd:\elearninglists.csv';
+
+-- Import from STDIN
+COPY persons(id, fname, lname) FROM STDIN;
+
+-- Export to STDOUT
+COPY elearninglists(id, course_order, course_id, courseowner, title) TO STDOUT;
+
+-- ADDITIONAL COMMANDS
+-- 1. Delete top[3] from users where user_id = "AB"
+DELETE top[3] FROM users WHERE user_id = 'AB';
+
+-- 2. ORDER BY command in Cassandra
+SELECT * FROM Students_Info WHERE Roll_No IN (1,2,3) ORDER BY StudName ASC;
+
+-- 3. Create and Update MAP in Cassandra
+ALTER TABLE Students_Info ADD grades map<text, int>;
+UPDATE Students_Info SET grades = {'Math': 85, 'Science': 90} WHERE Roll_No = 1;
+UPDATE Students_Info SET grades['English'] = 88 WHERE Roll_No = 1;

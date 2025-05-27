@@ -1,0 +1,55 @@
+medical dataset contains patientID, DiseaseCode, and AGe. write a mapreduce program to calculate avg patient age for each disease category
+P001 D001 45
+P002 D002 32
+P003 D001 50
+P004 D003 28
+P005 D002 40
+
+
+
+mapper.py
+#!/usr/bin/env python3
+import sys
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    parts = line.split()
+    if len(parts) != 3:
+        continue
+    patientID, diseaseCode, age = parts
+    print(f"{diseaseCode}\t{age}")
+
+
+reducer.py
+#!/usr/bin/env python3
+import sys
+
+current_disease = None
+total_age = 0
+count = 0
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    diseaseCode, age_str = line.split('\t')
+    age = int(age_str)
+
+    if current_disease == diseaseCode:
+        total_age += age
+        count += 1
+    else:
+        if current_disease is not None:
+            avg_age = total_age / count
+            print(f"{current_disease}\t{avg_age:.2f}")
+        current_disease = diseaseCode
+        total_age = age
+        count = 1
+
+# print last disease average
+if current_disease is not None:
+    avg_age = total_age / count
+    print(f"{current_disease}\t{avg_age:.2f}")
+
