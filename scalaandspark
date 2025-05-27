@@ -1,0 +1,58 @@
+Running a Normal Scala Program 
+
+for checking version --> scala -version
+
+nano ExampleForLoop1.scala
+
+copy paste the code [ the object name and the command name should be same]
+
+write a code related to your question below one is for reference.
+  
+object ExampleForLoop1 {
+  def main(args: Array[String]) {
+    var counter: Int = 0;
+    for (counter <- 1 to 100)
+      print(counter + " ");
+  }
+}
+
+and then ---->  ctrl +s , ctrl+x. or crtl+o, enter, ctrl+x 
+
+scalac ExampleForLoop1.scala             <----- for compiling
+scala ExampleForLoop1                           <----- for running.
+
+--------------------------------------------------------------------------------------
+For rdd and flatmap
+
+Exit Spark Shell if it’s open:
+:q
+
+nano sparkdata.txt
+//write some lines in the file and then Save and exit the file: Ctrl + O, Enter, Ctrl + X
+
+Launch Spark Shell :
+spark-shell
+
+
+//  Reads the file line-by-line into an RDD.
+val data = sc.textFile("sparkdata.txt")
+
+// Split each line into words
+val splitdata = data.flatMap(line => line.split(" "))
+
+// Convert each word into a (word, 1) pair
+val mapdata = splitdata.map(word => (word, 1))
+
+// Reduce by key to count occurrences of each word
+val reducedata = mapdata.reduceByKey(_ + _)
+
+// Filter to get words with count > 4
+val filtered = reducedata.filter { case (word, count) => count > 4 }
+
+// Collect and print the result
+filtered.collect.foreach(println)
+
+
+--------------------------------------------------------------------------------------
+
+
